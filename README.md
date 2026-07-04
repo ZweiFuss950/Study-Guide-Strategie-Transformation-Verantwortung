@@ -1,1 +1,0 @@
-# Study-Guide-Strategie-Transformation-Verantwortung
