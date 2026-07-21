@@ -4,241 +4,879 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AKTE 2026-STV • StudyGuide</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com">
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { font-family: 'Inter', system-ui, sans-serif; }
-        .accordion-content { max-height: 0; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .accordion-open .accordion-content { max-height: 800px; }
-        .question-card { transition: all 0.2s ease; }
-        .mastered { background-color: #ecfdf5; border-color: #10b981; }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .accordion-open .accordion-content {
+            max-height: 800px;
+        }
+
+        .question-card {
+            transition: all 0.2s ease;
+        }
+
+        .mastered {
+            background-color: #022c22;
+            border-color: #10b981;
+        }
+
+        /* Bond Flash Overlay */
+        #bond-flash {
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            pointer-events: none;
+            opacity: 0;
+            background: radial-gradient(circle at center,
+                    rgba(190, 30, 20, 0.95) 0%,
+                    rgba(160, 20, 10, 0.7) 30%,
+                    rgba(120, 10, 5, 0.3) 60%,
+                    transparent 85%);
+            transition: opacity 0.05s ease;
+        }
+
+        #bond-flash.fire {
+            animation: bondMuzzle 0.55s ease-out forwards;
+        }
+
+        @keyframes bondMuzzle {
+            0% {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+            18% {
+                opacity: 1;
+                transform: scale(1.4);
+            }
+            40% {
+                opacity: 0.9;
+                transform: scale(1.0);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1.6);
+            }
+        }
+
+        /* Crosshair */
+        .crosshair-wrap {
+            width: 100px;
+            height: 100px;
+            position: relative;
+            margin: 0 auto 16px;
+        }
+
+        .crosshair-ring {
+            transform-origin: 50px 50px;
+        }
+
+        .crosshair-wrap.spinning .crosshair-ring {
+            animation: spin 0.9s linear infinite;
+        }
+        .crosshair-wrap.firing .crosshair-ring {
+            animation: recoilSpin 0.55s ease-out forwards;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        @keyframes recoilSpin {
+            0% {
+                transform: rotate(0deg) scale(1);
+            }
+            30% {
+                transform: rotate(120deg) scale(1.25);
+            }
+            70% {
+                transform: rotate(280deg) scale(0.9);
+            }
+            100% {
+                transform: rotate(360deg) scale(1);
+            }
+        }
+
+        .glossary-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            display: none;
+            align-items: stretch;
+            justify-content: flex-end;
+        }
+
+        .glossary-overlay.show {
+            display: flex;
+        }
+
+        .glossary-panel {
+            width: min(440px, 92vw);
+            background: #18181b;
+            height: 100%;
+            box-shadow: -8px 0 30px rgba(0, 0, 0, 0.7);
+            transform: translateX(30px);
+            opacity: 0;
+            transition: transform 0.25s ease, opacity 0.25s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .glossary-overlay.show .glossary-panel {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .kreuz-card {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .kreuz-card.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body class="bg-zinc-950 text-zinc-200 min-h-screen">
+    <div id="bond-flash"></div>
+
     <div class="max-w-5xl mx-auto p-6">
         <!-- Header -->
         <div class="flex justify-between items-center mb-8 border-b border-zinc-800 pb-6">
             <div>
                 <h1 class="text-3xl font-bold text-white">AKTE NR. 2026-STV</h1>
                 <p class="text-emerald-400 font-medium">STRATEGIE • TRANSFORMATION • VERANTWORTUNG</p>
-                <p class="text-zinc-400 text-sm">Feinlernziele-StudyGuide • 30 von 30 Fragen</p>
+                <p class="text-zinc-400 text-sm">Feinlernziele-StudyGuide • <span id="total-questions">30</span> von 30
+                    Fragen</p>
             </div>
             <div class="flex items-center gap-4">
-                <div id="timer" class="bg-zinc-900 px-4 py-2 rounded-xl font-mono text-lg font-semibold text-amber-400">30:00</div>
-                <button onclick="toggleAll(true)" 
-                        class="px-5 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl flex items-center gap-2 text-sm font-medium">
-                    <i class="fas fa-expand"></i> ALLE AUFKLAPPEN
-                </button>
-                <button onclick="toggleAll(false)" 
-                        class="px-5 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl flex items-center gap-2 text-sm font-medium">
-                    <i class="fas fa-compress"></i> ALLE ZUKLAPPEN
-                </button>
-            </div>
-        </div>
-
-        <!-- Navigation -->
-        <div class="flex gap-2 mb-8 flex-wrap">
-            <button onclick="filterCategory('all')" class="nav-btn active px-6 py-3 rounded-2xl font-semibold" data-filter="all">ALLE (30)</button>
-            <button onclick="filterCategory('was')" class="nav-btn px-6 py-3 rounded-2xl font-semibold" data-filter="was">WAS</button>
-            <button onclick="filterCategory('warum')" class="nav-btn px-6 py-3 rounded-2xl font-semibold" data-filter="warum">WARUM</button>
-            <button onclick="filterCategory('wie')" class="nav-btn px-6 py-3 rounded-2xl font-semibold" data-filter="wie">WIE</button>
-            <button onclick="startKreuzfeuer()" 
-                    class="ml-auto bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 px-8 py-3 rounded-2xl font-bold flex items-center gap-3">
-                <i class="fas fa-bolt"></i> KREUZFEUER MODUS
+                <div id="timer" class="bg-zinc-900 px-4 py-2 rounded-xl font-mono text-lg font-semibold text-amber-400">
+                    30:00</div>
+                <button onclick="toggleAll(true)"
+                class="px-5 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl flex items-center gap-2 text-sm font-medium">
+                <i class="fas fa-expand"></i> ALLE AUFKLAPPEN
             </button>
-        </div>
+            <button onclick="toggleAll(false)"
+            class="px-5 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl flex items-center gap-2 text-sm font-medium">
+            <i class="fas fa-compress"></i> ALLE ZUKLAPPEN
+        </button>
+    </div>
+</div>
 
-        <!-- Progress -->
-        <div class="mb-6 bg-zinc-900 rounded-3xl p-4 flex items-center gap-4">
-            <div class="flex-1">
-                <div class="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                    <div id="progress-bar" class="h-2 bg-emerald-500 w-0 transition-all duration-500 rounded-full"></div>
-                </div>
-            </div>
-            <div class="text-sm font-medium text-zinc-400">
-                <span id="mastered-count">0</span>/30 gemeistert
-            </div>
-        </div>
+<!-- Navigation -->
+<div class="flex gap-2 mb-8 flex-wrap">
+    <button onclick="filterCategory('all')" class="nav-btn active px-6 py-3 rounded-2xl font-semibold bg-zinc-800"
+    data-filter="all">ALLE (30)</button>
+    <button onclick="filterCategory('was')" class="nav-btn px-6 py-3 rounded-2xl font-semibold"
+    data-filter="was">WAS</button>
+    <button onclick="filterCategory('warum')" class="nav-btn px-6 py-3 rounded-2xl font-semibold"
+    data-filter="warum">WARUM</button>
+    <button onclick="filterCategory('wie')" class="nav-btn px-6 py-3 rounded-2xl font-semibold"
+    data-filter="wie">WIE</button>
+    <button onclick="startKreuzfeuer()"
+    class="ml-auto bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 px-8 py-3 rounded-2xl font-bold flex items-center gap-3">
+    <i class="fas fa-bolt"></i> KREUZFEUER MODUS
+</button>
+</div>
 
-        <!-- Questions -->
-        <div id="questions-container" class="space-y-4"></div>
-
-        <!-- Footer -->
-        <div class="mt-12 text-center text-zinc-500 text-sm">
-            <p>30 Minuten Intensiv-Modus • Ziel: Jede Frage in ≤ 60 Sekunden souverän beantworten</p>
-            <button onclick="resetAll()" 
-                    class="mt-4 text-xs px-4 py-2 bg-zinc-900 hover:bg-red-950 hover:text-red-400 rounded-xl">
-                Fortschritt zurücksetzen
-            </button>
+<!-- Progress -->
+<div class="mb-6 bg-zinc-900 rounded-3xl p-4 flex items-center gap-4">
+    <div class="flex-1">
+        <div class="h-2 bg-zinc-800 rounded-full overflow-hidden">
+            <div id="progress-bar" class="h-2 bg-emerald-500 w-0 transition-all duration-500 rounded-full"></div>
         </div>
     </div>
+    <div class="text-sm font-medium text-zinc-400">
+        <span id="mastered-count">0</span>/30 gemeistert
+    </div>
+</div>
 
-    <script>
-        const questions = [
-            { nr: "01", type: "was", q: "Was bedeutet Unternehmensführung in unserem Kontext?", 
-              kern: "Unternehmen = privater Betrieb, planvoll organisiert, produziert über Eigenbedarf hinaus nach erwerbswirtschaftlichem Prinzip<br>Führung = durch Interaktion vermittelte Ausrichtung von Individuen/Gruppen auf Ziele<br>5 Säulen: Umweltverständnis, Strategie, Organisation, Personal, Steuerung<br>Fokus: Umsatz − Kosten = Gewinn",
-              text: "Unternehmensführung bedeutet in unserem Kontext die planvolle Ausrichtung eines privaten Betriebs, der über den Eigenbedarf hinaus produziert, auf Ziele. Dies geschieht durch Interaktion. Die fünf zentralen Säulen sind Umweltverständnis, Strategie, Organisation, Personal und Steuerung. Der ökonomische Fokus bleibt immer Umsatz minus Kosten gleich Gewinn." },
-            
-            { nr: "02", type: "warum", q: "Warum sind Unternehmen soziale Systeme?", 
-              kern: "Bestehen aus Kommunikation, nicht aus Menschen an sich<br>Führung = Ausrichtung durch Interaktion → sozialer Austausch nötig<br>Selbstorganisation, eigene Regeln und Rollen<br>Operative Geschlossenheit: Impulse von außen werden nur als Information verarbeitet<br>Hohe Komplexität, Verhalten kaum vorhersehbar",
-              text: "Unternehmen sind soziale Systeme, weil sie aus Kommunikation bestehen. Führung erfolgt durch Interaktion. Sie organisieren sich selbst mit eigenen Regeln und Rollen und sind operativ geschlossen – äußere Impulse werden nur als Information verarbeitet. Dadurch entsteht hohe Komplexität und kaum vorhersehbares Verhalten." },
-            
-            // ... (Ich habe alle 30 Fragen hier eingefügt – aus Platzgründen in der Antwort gekürzt, aber im echten Code sind alle vollständig)
-            // Für diese Demo sind die ersten beiden vollständig, die restlichen folgen demselben Schema.
-            // In der vollständigen Version sind alle 30 Fragen hier im Array.
+<!-- Questions -->
+<div id="questions-container" class="space-y-4"></div>
+
+<!-- Kreuzfeuer Section -->
+<div id="kreuzfeuer-section" class="mt-10 hidden">
+    <div class="text-center mb-8">
+        <div class="crosshair-wrap mx-auto mb-4" id="crosshair">
+            <svg viewBox="0 0 100 100" class="w-full h-full">
+                <circle cx="50" cy="50" r="44" fill="none" stroke="#52525b" stroke-width="1.5" />
+                <circle cx="50" cy="50" r="28" fill="none" stroke="#52525b" stroke-width="1.5" />
+                <line x1="50" y1="4" x2="50" y2="16" stroke="#e4e4e7" stroke-width="2" />
+                <line x1="50" y1="84" x2="50" y2="96" stroke="#e4e4e7" stroke-width="2" />
+                <line x1="4" y1="50" x2="16" y2="50" stroke="#e4e4e7" stroke-width="2" />
+                <line x1="84" y1="50" x2="96" y2="50" stroke="#e4e4e7" stroke-width="2" />
+                <g class="crosshair-ring">
+                    <circle cx="50" cy="50" r="44" fill="none" stroke="#ef4444" stroke-width="2" stroke-dasharray="4 200" />
+                </g>
+                <circle cx="50" cy="50" r="3" fill="#ef4444" />
+            </svg>
+        </div>
+        <h2 class="text-2xl font-bold text-white mb-2">Ins Kreuzfeuer</h2>
+        <p class="text-zinc-400 max-w-xl mx-auto mb-6">Der Dozent stellt am Prüfungstag drei zufällige Feinlernziele –
+            je eine <b class="text-white">Was-</b>, eine <b class="text-white">Warum-</b> und eine <b
+        class="text-white">Wie-Frage</b>. Simuliere die Situation!</p>
+        <button id="kreuz-generate"
+        class="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-2xl font-bold text-sm uppercase tracking-wider flex items-center gap-2 mx-auto">
+        <i class="fas fa-crosshairs"></i> Kreuzfeuer starten
+    </button>
+    <div id="kreuz-round-label" class="text-zinc-500 text-xs uppercase tracking-widest mt-6 opacity-0 transition-opacity">
+        Runde <span id="kreuz-round-num">1</span></div>
+</div>
+<div id="kreuz-cards" class="space-y-4 mt-6"></div>
+</div>
+
+<!-- Footer -->
+<div class="mt-12 text-center text-zinc-500 text-sm">
+    <p>30 Minuten Intensiv-Modus • Ziel: Jede Frage in ≤ 60 Sekunden souverän beantworten</p>
+    <button onclick="resetAll()"
+    class="mt-4 text-xs px-4 py-2 bg-zinc-900 hover:bg-red-950 hover:text-red-400 rounded-xl">
+    Fortschritt zurücksetzen
+</button>
+</div>
+</div>
+
+<!-- Glossary FAB -->
+<button id="glossary-open"
+class="fixed bottom-6 right-6 z-50 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border-none rounded-full px-5 py-3 font-medium text-sm flex items-center gap-2 shadow-xl transition">
+<i class="fas fa-book"></i> Glossar
+</button>
+
+<!-- Glossary Overlay -->
+<div class="glossary-overlay" id="glossary-overlay">
+    <div class="glossary-panel">
+        <div class="p-5 border-b border-zinc-700 flex items-start justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-bold text-white">Glossar</h2>
+                <p class="text-zinc-400 text-sm">Begriffe aus Strategie & Unternehmensführung</p>
+            </div>
+            <button id="glossary-close"
+            class="bg-transparent border border-zinc-600 rounded-full w-8 h-8 text-zinc-300 hover:bg-zinc-600">✕</button>
+        </div>
+        <div class="p-4 border-b border-zinc-700">
+            <input id="glossary-search" type="text" placeholder="Begriff suchen…" autocomplete="off"
+            class="w-full p-2.5 bg-zinc-900 border border-zinc-700 rounded-lg text-zinc-200 text-sm focus:border-emerald-500 outline-none">
+        </div>
+        <div class="overflow-y-auto p-4 flex-1" id="glossary-list"></div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ──────────────────────────────── DATA ────────────────────────────────
+        const QUESTIONS = [
+            { num: 1, category: "was", question: "Was bedeutet Unternehmensführung in unserem Kontext?",
+                kernpunkte: [
+                    "Unternehmen = privater Betrieb, planvoll organisiert, produziert über Eigenbedarf hinaus nach erwerbswirtschaftlichem Prinzip",
+                    "Führung = durch Interaktion vermittelte Ausrichtung von Individuen/Gruppen auf Ziele",
+                    "5 Säulen: Umweltverständnis, Strategie, Organisation, Personal, Steuerung",
+                    "Fokus: Umsatz − Kosten = Gewinn"
+                ],
+                vorlesetext: "Unternehmensführung bedeutet die zielorientierte Gestaltung, Lenkung und Entwicklung eines Unternehmens. Ein Unternehmen ist ein privater Betrieb, der planvoll Güter und Dienstleistungen über den Eigenbedarf hinaus herstellt und verkauft. Führung heißt, das Handeln von Menschen durch Interaktion auf gemeinsame Ziele auszurichten. Erfolgreiche Unternehmensführung basiert auf fünf Säulen: einem guten Verständnis der Umwelt, einer klaren Strategie, einer funktionierenden Organisation, exzellentem Personal und effizienten Steuerungsprozessen. Der ökonomische Fokus liegt dabei immer auf nachhaltiger Gewinnerwirtschaftung – vereinfacht: Umsatz minus Kosten gleich Gewinn." },
+            { num: 2, category: "warum", question: "Warum sind Unternehmen soziale Systeme?",
+                kernpunkte: ["Bestehen aus Kommunikation, nicht aus Menschen an sich",
+                    "Führung = Ausrichtung durch Interaktion → sozialer Austausch nötig",
+                    "Selbstorganisation, eigene Regeln und Rollen",
+                    "Operative Geschlossenheit: Impulse von außen werden nur als Information verarbeitet",
+                    "Hohe Komplexität, Verhalten kaum vorhersehbar"
+                ],
+                vorlesetext: "Unternehmen sind soziale Systeme, weil sie aus systemtheoretischer Sicht nicht aus Menschen, sondern aus Kommunikation bestehen – Menschen gehören zur Umwelt des Systems. Führung wird explizit als durch Interaktion vermittelte Ausrichtung definiert, das heißt Ziele entstehen nur im sozialen Austausch. Unternehmen organisieren sich selbst, entwickeln eigene Regeln und Rollen und grenzen sich von ihrer Umwelt ab. Wichtig: Sie sind operativ geschlossen – Anweisungen von außen werden nur als Information wahrgenommen und nach interner Logik verarbeitet, nicht direkt gesteuert. Dadurch sind Unternehmen hochkomplex und ihr Verhalten letztlich nicht vollständig vorhersehbar." },
+            { num: 3, category: "wie", question: "Wie können wir Geschäftsmodelle von Organisationen analysieren?",
+                kernpunkte: ["Zentrales Instrument: Business Model Canvas (BMC), 9 Bausteine",
+                    "Kundensegmente, Kunden-Mehrwert, Kanäle, Kundenbeziehungen, Einnahmequellen",
+                    "Kern-Aktivitäten, Schlüssel-Ressourcen, Schlüssel-Partnerschaften, Kostenstrukturen",
+                    "Einordnung im Kapitel \"Identität\", baut auf PESTEL- und Stakeholder-Analyse auf"
+                ],
+                vorlesetext: "Geschäftsmodelle analysieren wir primär mit dem Business Model Canvas, kurz BMC. Dieses Instrument bildet strukturiert ab, wie ein Unternehmen Werte schafft, liefert und erfasst – anhand von neun Bausteinen: Kundensegmente, Kunden-Mehrwert, Kanäle, Kundenbeziehungen, Einnahmequellen, Kernaktivitäten, Schlüsselressourcen, Schlüsselpartnerschaften und Kostenstrukturen. Die Geschäftsmodellanalyse gehört zum Kapitel Identität und baut auf vorherigen Analysen wie der PESTEL- und der Stakeholder-Analyse auf, die den strategischen Ausgangspunkt bilden." },
+            { num: 4, category: "was",
+                question: "Was sind zentrale Einflussfaktoren der Makro-Umwelt von Organisationen?",
+                kernpunkte: ["Makro-Umwelt = äußerste Schicht, kaum steuerbar",
+                    "PESTEL: Political, Economical, Social, Technological, Environmental, Legal",
+                    "Beispiele: Politik/Recht, BIP/Zinsen, Demografie, KI/Automatisierung, Rohstoffe/Recycling",
+                    "Relevanz im VUCA-Kontext"
+                ],
+                vorlesetext: "Die Makro-Umwelt ist die äußerste Schicht des Unternehmensumfelds – Faktoren, die stark wirken, aber kaum steuerbar sind. Zur Analyse nutzt man die PESTEL-Analyse mit sechs Segmenten: politische und rechtliche Faktoren wie Gesetze und Förderungen, ökonomische Faktoren wie BIP, Zinsen und Kaufkraft, soziale Faktoren wie Demografie und Wertewandel, technologische Faktoren wie KI und Automatisierung, sowie ökologische Faktoren wie Rohstoffverfügbarkeit und Nachhaltigkeit. Das Verständnis dieser Faktoren ist besonders in der VUCA-Welt wichtig, um Disruptionen frühzeitig zu erkennen." },
+            { num: 5, category: "warum",
+                question: "Warum braucht eine Organisation in einer VUCA-Welt ein klares Verständnis ihrer externen Umwelt?",
+                kernpunkte: ["VUCA: Volatility, Uncertainty, Complexity, Ambiguity",
+                    "Umweltverständnis = 1. Säule erfolgreicher Führung",
+                    "Identifikation von Transformationsanlässen (z. B. KI, demografischer Wandel)",
+                    "Leadership-Prinzip \"Understanding\" wirkt gegen Uncertainty",
+                    "Systemische Überlebensfähigkeit sichern"
+                ],
+                vorlesetext: "In einer VUCA-Welt – geprägt von Unstetigkeit, Unsicherheit, Komplexität und Mehrdeutigkeit – reichen klassische Planungsansätze nicht mehr aus. Ein gutes Umweltverständnis ist die erste Säule erfolgreicher Unternehmensführung, denn nur wer externe Faktoren wie technologischen Wandel oder geopolitische Unsicherheiten versteht, kann rechtzeitig neue strategische Suchrichtungen einschlagen. Das Leadership-Prinzip Understanding wirkt gezielt der Uncertainty entgegen. Da Unternehmen als soziale Systeme operativ geschlossen sind, müssen sie ihre Umwelt ständig analysieren, um sich anzupassen und langfristig überlebensfähig zu bleiben." },
+            { num: 6, category: "wie",
+                question: "Wie können wir die Makro-Umwelt mit der PESTEL-Analyse systematisch untersuchen und bewerten?",
+                kernpunkte: ["Segmentierung in 6 (bzw. 5 im Kurs, P+L zusammengefasst) Bereiche",
+                    "Checklisten-Verfahren: Gewichtung (Summe 100%), Situationsbeurteilung (0–5), Dynamik (1–4)",
+                    "Ergebnis: Umweltattraktivität und Umweltdynamik", "Einordnung als Chance oder Gefahr"
+                ],
+                vorlesetext: "Die PESTEL-Analyse untersucht die Makro-Umwelt systematisch in sechs Segmenten – im Kurs werden Politik und Recht zusammengefasst zu fünf. Mit einem Checklisten-Verfahren wird jedes Segment gewichtet, sodass die Summe hundert Prozent ergibt. Einzelne Faktoren werden auf einer Skala von null bis fünf nach Attraktivität bewertet und zusätzlich nach ihrer Dynamik – also wie sicher oder unsicher eine Entwicklung ist. Daraus ergeben sich Kennwerte für Umweltattraktivität und Umweltdynamik. Der letzte Schritt ist die strategische Einordnung: Ist ein Faktor eine Chance oder eine Gefahr für das Geschäftsmodell?" },
+            { num: 7, category: "was", question: "Was sind Stakeholder von Organisationen?",
+                kernpunkte: ["Personen, Gruppen, Organisationen mit Beziehung und Erwartungen ans Unternehmen",
+                    "Interne Stakeholder: Mitarbeitende, Eigentümer/Kapitalgeber",
+                    "Externe Stakeholder: Kunden, Lieferanten, Staat, Regulierer, lokale Bevölkerung",
+                    "Erweitert: Umwelt, künftige Generationen", "Zeigen, gegenüber wem Verantwortung besteht"
+                ],
+                vorlesetext: "Stakeholder, auch Anspruchsgruppen genannt, sind Personen, Gruppen oder Organisationen, die mit einem Unternehmen in Beziehung stehen und Erwartungen an es haben. Intern zählen dazu Mitarbeitende und Eigentümer, extern Kunden, Lieferanten, der Staat und die lokale Bevölkerung – aber auch die Umwelt und künftige Generationen gelten als Stakeholder. Sie fungieren als Verantwortungsinstanzen: Sie zeigen auf, gegenüber wem eine Organisation Rechenschaft ablegen muss, und helfen zu klären, welche Ansprüche legitim sind und wie weit die unternehmerische Verantwortung reicht." },
+            { num: 8, category: "warum",
+                question: "Warum prägen Stakeholder die unternehmerische Verantwortung einer Organisation?",
+                kernpunkte: ["Stakeholder = zentrale Verantwortungsinstanz, definieren Rechenschaftspflicht",
+                    "Klären Legitimität von Ansprüchen und Reichweite der Verantwortung",
+                    "Basis für Zielbildung (ökonomisch, ökologisch, sozial)",
+                    "Ethische Reflexion und Identitätsstiftung bei Transformationen"
+                ],
+                vorlesetext: "Stakeholder prägen unternehmerische Verantwortung, weil sie die zentrale Verantwortungsinstanz sind – ohne sie gäbe es niemanden, dem gegenüber Rechenschaft abgelegt werden müsste. Sie definieren, wer Adressat der unternehmerischen Rechtfertigung ist, und klären, welche Ansprüche legitim sind und wie weit die Verantwortung reicht, etwa bis in die Lieferkette. Stakeholder-Erwartungen bilden die Basis, um Ziele in ein Gleichgewicht aus ökonomischen, ökologischen und sozialen Zielen zu übersetzen. Man kann sagen: Stakeholder sind der moralische Kompass einer Organisation." },
+            { num: 9, category: "wie",
+                question: "Wie können Stakeholder-Erwartungen analysiert und in verantwortungsorientierte Ziele übersetzt werden?",
+                kernpunkte: ["Schritt 1: Stakeholder-Analyse – Identifikation, Austauschbeziehung, Ansprüche",
+                    "Schritt 2: 5 Verantwortungsdimensionen – Subjekt, Objekt, Instanz, Maßstab, Reichweite",
+                    "Schritt 3: Übersetzung in Zielsystem – ökonomisch, ökologisch, sozial"
+                ],
+                vorlesetext: "Zuerst führt man eine Stakeholder-Analyse durch: Wer steht mit dem Unternehmen in Beziehung, welche Austauschbeziehung besteht – etwa Lohn gegen Arbeit – und welche Ansprüche resultieren daraus? Danach bestimmt man fünf Verantwortungsdimensionen: Wer trägt Verantwortung, wofür, gegenüber wem, nach welchem Maßstab und wie weit reicht sie? Zum Schluss werden die Ansprüche in ein nachhaltiges Zielsystem übersetzt, das ökonomische Ziele wie Rentabilität, ökologische Ziele wie CO2-Neutralität und soziale Ziele wie faire Arbeitsbedingungen gleichberechtigt balanciert." },
+            { num: 10, category: "was", question: "Was sind Purpose, Werte und Kultur in unserem Kontext?",
+                kernpunkte: ["Purpose: Daseinsberechtigung, Beitrag zu Umwelt/Gemeinwohl → \"Why\"",
+                    "Werte: wünschenswerte Normen/Verhaltensweisen, Orientierung, Legitimation von Optionen",
+                    "Kultur: Gesamtheit der Wertvorstellungen/Traditionen/Denkhaltungen → \"How\"",
+                    "3 Kulturebenen: Symbole/Artefakte, Normen/Standards, Basisannahmen"
+                ],
+                vorlesetext: "Purpose bestimmt die Daseinsberechtigung eines Unternehmens – er beantwortet das Warum, also welchen Beitrag es zum Gemeinwohl leistet. Werte sind Vorstellungen und Normen, die als wünschenswert gelten und den Mitgliedern als Orientierung dienen; sie entscheiden auch, welche strategischen Optionen legitim sind. Die Unternehmenskultur beschreibt das Wie, also wie Ziele erreicht werden, und umfasst drei Ebenen: sichtbare Symbole und Artefakte wie Logos, teils bewusste Normen und Standards, sowie unsichtbare, unbewusste Basisannahmen. Gemeinsam bilden diese drei Elemente die organisationale Identität." },
+            { num: 11, category: "warum",
+                question: "Warum ist organisationale Identität eine Grundlage normativer und strategischer Unternehmensführung?",
+                kernpunkte: ["Normativ: definiert Purpose, Werte als Orientierung, Vision/Mission als Leitplanken",
+                    "Strategisch: Werte legitimieren strategische Optionen, filtern Stakeholder-Erwartungen",
+                    "Wichtig in Transformationen: Glaubwürdigkeit neuer Suchrichtungen"
+                ],
+                vorlesetext: "Organisationale Identität ist die Grundlage, weil sie beantwortet, wer wir sind und warum unsere Existenz gerechtfertigt ist. Auf normativer Ebene definiert sie den Purpose und liefert über Werte Orientierung für die Mitglieder. Auf strategischer Ebene entscheiden die in der Identität verankerten Werte, welche strategischen Optionen als legitim gelten, und die Identität filtert, welche Stakeholder-Erwartungen ernst genommen werden. Besonders in Transformationsprozessen ist eine geschärfte Identität nötig, damit neue strategische Richtungen für Kunden und Mitarbeitende glaubwürdig bleiben." },
+            { num: 12, category: "wie",
+                question: "Wie kann die Identität einer Organisation analysiert, weiterentwickelt und glaubwürdig vermittelt werden?",
+                kernpunkte: ["Analyse: \"Wer sind wir heute?\", Umweltabgleich, BMC, Kulturanalyse (3 Ebenen)",
+                    "Weiterentwicklung: Purpose definieren, Vision/Mission festlegen, Werte reflektieren, Blockaden überwinden",
+                    "Vermittlung: inhaltliche Konsistenz, kommunikative Form, Handlungsorientierung"
+                ],
+                vorlesetext: "Zur Analyse der Identität fragt man: Wer sind wir heute, welche Umweltveränderungen fordern unser Selbstverständnis heraus, und welches Geschäftsmodell sowie welche Kulturebenen prägen uns? Die Weiterentwicklung erfolgt meist durch einen Transformationsanlass und umfasst die Definition von Purpose, die Festlegung von Vision und Mission, die Reflexion von Werten sowie das Überwinden blockierender Routinen. Glaubwürdig vermittelt wird die Identität, wenn sie inhaltlich konsistent ist, kommunikativ überzeugend aufbereitet wird und die Organisation sich spürbar entsprechend verändert – Why, How und What müssen zusammenpassen." },
+            { num: 13, category: "was", question: "Was sind Vision und Mission in unserem Kontext?",
+                kernpunkte: ["Vision: Zukunftsbild, weist Richtung, interne Anspruchshaltung, Beispiele MLK, JFK",
+                    "Mission: legt Tätigkeitsfeld/Zweck fest, kann bis zu funktionalen Missionen konkretisiert werden",
+                    "Mission beantwortet \"Why\"(Zweck), Vision Teil des \"How\" (Zukunftsbild)"
+                ],
+                vorlesetext: "Eine Vision ist ein Zukunftsbild, das der Organisation die Richtung weist und einen erstrebenswerten Zustand beschreibt – bekannte Beispiele sind Martin Luther Kings Traum oder Kennedys Mondlandungsziel. Die Mission legt dagegen das konkrete Tätigkeitsfeld fest und beschreibt den Unternehmenszweck, also was das Unternehmen erreichen will und welche Beiträge es für Stakeholder leistet. Sie kann von der Unternehmensmission bis zu funktionalen Missionen, etwa für Forschung, heruntergebrochen werden. Beide zusammen dienen als Leitplanken für die strategische und operative Führung." },
+            { num: 14, category: "warum",
+                question: "Warum lassen sich Purpose, Werte, Kultur, Vision und Mission als normative Zielformulierungen verstehen?",
+                kernpunkte: ["Bestimmen Identität und Legitimität → oberste Zielhierarchie",
+                    "Sichern Lebens- und Entwicklungsfähigkeit",
+                    "Werte/Kultur = Verhaltensnormen; Vision/Mission = Zukunftsbild und Zweck",
+                    "Basis für Verantwortung"
+                ],
+                vorlesetext: "Diese Elemente sind normative Zielformulierungen, weil sie gemeinsam das Fundament und den Legitimationsrahmen einer Organisation bilden – sie klären die Existenzberechtigung, während strategische Ziele auf Erfolgspotenziale und operative Ziele auf Effizienz zielen. Sie sichern die langfristige Lebens- und Entwicklungsfähigkeit, geben über Werte und Kultur Verhaltensnormen vor und weisen über Vision und Mission die Richtung sowie den Zweck. Damit bilden sie auch die Grundlage für unternehmerische Verantwortung, da sie festlegen, welche Beiträge für Stakeholder geleistet werden." },
+            { num: 15, category: "wie",
+                question: "Wie können wir mithilfe einer Vision Map eine Vision entwickeln?",
+                kernpunkte: ["4 Leitfragen im Raster: Wer? Was? Wie? Mit wem?",
+                    "Wer: Akteure/Zielgruppe; Was: angestrebter Zustand; Wie: Umsetzungsweg; Mit wem: Partner/Stakeholder",
+                    "Ziel: klare Suchrichtung statt vager Traum"
+                ],
+                vorlesetext: "Die Vision Map entwickelt eine Vision systematisch anhand von vier Leitfragen in einem Raster. Wer sind die handelnden Akteure oder die Zielgruppe? Was ist der angestrebte Zustand, den die Organisation bewirken will? Wie soll dieses Zukunftsbild erreicht werden? Und mit wem – welche Partner oder Stakeholder sind für die Realisierung entscheidend? Durch diese Struktur wird sichergestellt, dass die Vision kein vager Traum bleibt, sondern eine klare Suchrichtung für die Strategieentwicklung vorgibt, was besonders in der unsicheren VUCA-Welt hilft." },
+            { num: 16, category: "was", question: "Was sind Wettbewerbsvorteile?",
+                kernpunkte: ["USP mit Premiumpreis-Bereitschaft, oder Kostenvorteile/Marktmacht",
+                    "Arten: objektiv (Miele), subjektiv (Apple), globale Präsenz (Siemens), Preis-Leistung (Aldi/Lidl), Ressourcen (ExxonMobil)",
+                    "Instrument zur Analyse: Five Forces nach Porter"
+                ],
+                vorlesetext: "Ein Wettbewerbsvorteil liegt vor, wenn ein Unternehmen entweder Alleinstellungsmerkmale bietet, für die Kunden einen Premiumpreis zahlen, oder über Kostenvorteile beziehungsweise Marktmacht verfügt. Beispiele sind objektive Leistungsvorteile wie bei Miele, subjektiv wahrgenommene Vorteile wie bei Apple, globale Präsenz wie bei Siemens, ein hohes Preis-Leistungs-Verhältnis wie bei Aldi oder Lidl, sowie exklusive Ressourcen wie Ölförderlizenzen bei ExxonMobil. Zur Analyse der Voraussetzungen nutzt man die Branchenstrukturanalyse nach Porter mit ihren fünf Kräften." },
+            { num: 17, category: "warum",
+                question: "Warum sind Analysen der Wettbewerbsumwelt unbedingte Voraussetzungen für die Unternehmensführung?",
+                kernpunkte: ["1. Säule erfolgreicher Führung", "Sicherung der Überlebensfähigkeit durch Wettbewerbsvorteile",
+                    "Five Forces bestimmt Branchenattraktivität", "Definition des relevanten Marktes",
+                    "Reaktion auf Disruption (Beispiel Blockbuster vs. Netflix)"
+                ],
+                vorlesetext: "Analysen der Wettbewerbsumwelt sind unverzichtbar, weil das Verständnis dessen, was außerhalb passiert, die erste Säule erfolgreicher Unternehmensführung ist. Nur wer Wettbewerbsvorteile erzielt und verteidigt, bleibt langfristig überlebensfähig. Mit der Branchenstrukturanalyse nach Porter lässt sich die Attraktivität einer Branche über fünf Kräfte bestimmen, und die Analyse hilft, den relevanten Markt abzugrenzen. Wer seine Wettbewerbsumwelt nicht versteht, riskiert wie Blockbuster gegenüber Netflix den Anschluss an technologiegetriebene Konkurrenten zu verlieren." },
+            { num: 18, category: "wie",
+                question: "Wie können Wettbewerber eines Unternehmens analysiert werden?",
+                kernpunkte: [
+                    "Branchenstrukturanalyse (Five Forces): Rivalität, neue Anbieter, Substitution, Abnehmer-/Lieferantenmacht",
+                    "Spezifische Fragen: Wer sind die Wettbewerber? Differenzierung? Welche Vorteile?",
+                    "Abgrenzung des relevanten Marktes",
+                    "Einordnung der Vorteile: objektiv, subjektiv, ressourcenbasiert"
+                ],
+                vorlesetext: "Wettbewerber analysiert man zunächst mit der Branchenstrukturanalyse nach Porter, die fünf Kräfte untersucht: Rivalität unter bestehenden Wettbewerbern, Bedrohung durch neue Anbieter, durch Ersatzprodukte sowie die Verhandlungsstärke von Abnehmern und Lieferanten. Konkret fragt man dann: Wer sind die wichtigsten Wettbewerber, wie unterscheiden sich ihre Angebote, und welche Wettbewerbsvorteile haben sie? Ein weiterer Schritt ist die Abgrenzung des relevanten Marktes. So lassen sich Unterschiede herausarbeiten und eine erfolgreiche Differenzierungsstrategie entwickeln." },
+            { num: 19, category: "was", question: "Was sind generische Wettbewerbsstrategien?",
+                kernpunkte: ["2 generische Strategien: Kosten-/Preisführerschaft und Differenzierung",
+                    "Kostenführerschaft: Skalen-, Verbund-, Erfahrungseffekte + aktives Kostenmanagement",
+                    "Differenzierung: Qualität, Marke, Zeit, Kundenbeziehung",
+                    "Gefahr: \"Zwischen den Stühlen\""
+                ],
+                vorlesetext: "Es gibt zwei generische Wettbewerbsstrategien: Kosten- beziehungsweise Preisführerschaft und Differenzierung. Bei der Kostenführerschaft nutzt man strukturelle Kostenvorteile wie Skalen-, Verbund- und Erfahrungseffekte sowie aktives Kostenmanagement – Beispiel sind Aldi oder Lidl. Bei der Differenzierung hebt man sich über Qualität, Marke, Zeit oder Kundenbeziehung ab, etwa wie Miele oder Apple. Gefährlich ist die Position \"zwischen den Stühlen\", wenn ein Unternehmen weder klaren Kostenvorteil noch echte Differenzierung erreicht und im Marktdurchschnitt verharrt." },
+            { num: 20, category: "warum",
+                question: "Warum müssen alle Wettbewerbsstrategien auf die Rentabilität ausgerichtet sein?",
+                kernpunkte: ["Sichert Überlebensfähigkeit als Wirtschaftseinheit",
+                    "Finanziert Erfolgspotenziale (F&E, neue Märkte)",
+                    "Vermeidet \"Zwischen den Stühlen\"-Falle", "Ökonomische Ziele als Basis nachhaltiger Führung",
+                    "Systemtheoretisch: Erfolg als Steuerungssignal"
+                ],
+                vorlesetext: "Rentabilität ist kein Selbstzweck, sondern das notwendige Ergebnis jeder erfolgreichen Strategie. Nur profitable Wettbewerbsvorteile sichern das Überleben eines Unternehmens im Markt und finanzieren neue Erfolgspotenziale wie Forschung oder neue Märkte. Ohne Rentabilitätsfokus droht die Falle \"zwischen den Stühlen\" mit Verlust von Marktanteilen. Ökonomische Ziele bilden zudem die marktwirtschaftliche Basis, auf der ökologische und soziale Ziele erst stabil verfolgt werden können. Systemtheoretisch fungiert Erfolg als Steuerungssignal – ohne ihn fehlen die Ressourcen, und das System kann zusammenbrechen." },
+            { num: 21, category: "wie",
+                question: "Wie werden Wettbewerbsvorteile in einem Unternehmen erzielt?",
+                kernpunkte: ["Kosten-/Preisführerschaft ODER Differenzierung",
+                    "Aufbau von Erfolgspotenzialen: F&E, neue Märkte/Produkte, exklusive Kompetenzen",
+                    "Voraussetzung: Analyse der Wettbewerbsumwelt (Five Forces, relevanter Markt)",
+                    "Zusammenspiel mit internen Erfolgsfaktoren (7-S-Modell)"
+                ],
+                vorlesetext: "Wettbewerbsvorteile entstehen durch die konsequente Umsetzung einer generischen Strategie – entweder Kosten-/Preisführerschaft durch Skalen- und Erfahrungseffekte, oder Differenzierung über Qualität, Marke, Zeit oder Kundenbeziehung. Zusätzlich braucht es den Aufbau von Erfolgspotenzialen wie Investitionen in Forschung, neue Märkte oder exklusive Kompetenzen, etwa Ölförderlizenzen. Voraussetzung dafür ist immer eine gründliche Analyse der Wettbewerbsumwelt mit dem Five-Forces-Modell und die Abgrenzung des relevanten Marktes. Letztlich entstehen Vorteile aus dem Zusammenspiel von Marktpositionierung und internen Erfolgsfaktoren, wie sie das 7-S-Modell beschreibt." },
+            { num: 22, category: "was", question: "Was ist eine SWOT-Analyse?",
+                kernpunkte: ["Strengths, Weaknesses, Opportunities, Threats",
+                    "Intern: Stärken/Schwächen; Extern: Chancen/Gefahren",
+                    "Synthese aus PESTEL, Five Forces, Mikro-Umwelt (extern) und BMC/Wertschöpfungskette (intern)",
+                    "Zeigt strategische Position und Handlungsbedarf"
+                ],
+                vorlesetext: "Die SWOT-Analyse bewertet Strengths, Weaknesses, Opportunities und Threats – also Stärken und Schwächen des Unternehmens sowie Chancen und Gefahren aus dem Umfeld. Sie ist ein Synthese-Instrument: Die externen Faktoren stammen aus PESTEL-, Five-Forces- und Mikro-Umwelt-Analysen, die internen Faktoren aus der Untersuchung von Geschäftsmodell, Wertschöpfungskette oder dem 7-S-Modell. So zeigt die SWOT-Analyse die aktuelle strategische Position eines Unternehmens und macht den strategischen Handlungsbedarf sichtbar." },
+            { num: 23, category: "warum",
+                question: "Warum bilden SWOT-Analyse und TOWS-Matrix eine zentrale Brücke zur Strategieentwicklung?",
+                kernpunkte: ["SWOT bündelt Erkenntnisse aus Vor-Analysen (Synthese)",
+                    "Macht strategische Position und Handlungsbedarf greifbar",
+                    "TOWS nutzt diese Daten, um Normstrategien logisch abzuleiten",
+                    "Sichert Konsistenz: Strategie basiert auf Analyse, nicht im luftleeren Raum"
+                ],
+                vorlesetext: "SWOT und TOWS bilden die Brücke, weil die SWOT-Analyse als Synthese-Instrument die Erkenntnisse aus PESTEL, Five Forces und internen Analysen bündelt und dadurch die strategische Position des Unternehmens greifbar macht. Während SWOT nur den Ist-Zustand dokumentiert, nutzt die TOWS-Matrix diese Daten, um logisch hergeleitete Strategiealternativen zu entwickeln. Ohne diese Brücke bliebe die Analyse folgenlos und die Strategiewahl ohne analytisches Fundament – erst durch die Kombination entstehen fundierte Normstrategien." },
+            { num: 24, category: "wie",
+                question: "Wie lassen sich mit der TOWS-Matrix Strategiealternativen ableiten?",
+                kernpunkte: ["Faustregel: \"Stärken betonen, Schwächen vermeiden\"",
+                    "S-O (\"ausbauen\"): Stärken nutzen für Chancen",
+                    "W-O (\"aufholen\"): Schwächen abbauen für Chancen",
+                    "S-T (\"absichern\"): Stärken gegen Gefahren einsetzen",
+                    "W-T (\"vermeiden\"): Schwächen minimieren gegen Gefahren"
+                ],
+                vorlesetext: "Die TOWS-Matrix kombiniert interne Stärken und Schwächen mit externen Chancen und Gefahren nach der Faustregel \"Stärken betonen, Schwächen vermeiden\". Daraus ergeben sich vier Strategiefelder: S-O-Strategien nutzen Stärken, um Chancen auszubauen. W-O-Strategien bauen Schwächen ab, um Chancen aufzuholen. S-T-Strategien setzen Stärken ein, um Gefahren abzusichern. Und W-T-Strategien minimieren Schwächen, um Gefahren zu vermeiden. So entstehen konkrete, aus der Analyse abgeleitete Strategiealternativen." },
+            { num: 25, category: "was", question: "Was ist ein Leitbild eines Unternehmens?",
+                kernpunkte: ["Fasst Identität zusammen, macht Purpose/Vision/Mission handhabbar",
+                    "3 Bausteine: Kerngeschäft (\"Wo?\"), einzigartige Kompetenzen (\"Wie?\"), Werte (\"Warum?\")",
+                    "Funktionen: Entscheidungsunterstützung, Handlungssteuerung, Legitimation/Konfliktlösung",
+                    "Zugeordnet zu Kapitel Transformation"
+                ],
+                vorlesetext: "Ein Leitbild ist ein zentrales Instrument, das die Identität einer Organisation zusammenfasst und als Orientierungsrahmen für Transformationen dient. Es besteht aus drei Bausteinen: der Definition des Kerngeschäfts – also wo Prioritäten liegen –, der Definition einzigartiger Kompetenzen – also wie das Unternehmen sich auszeichnet –, und der Definition von Werten – also warum das Unternehmen relevant ist. Funktional unterstützt das Leitbild Entscheidungen, steuert Handlungen, koordiniert Aktivitäten und dient der Legitimation sowie Konfliktlösung." },
+            { num: 26, category: "warum",
+                question: "Warum kann ein Leitbild eine gute Orientierung für Transformationen sein?",
+                kernpunkte: ["Handlungssteuerung und Koordination über Abteilungen hinweg",
+                    "Maßstab für Entscheidungen in der VUCA-Welt",
+                    "Legitimation und Konfliktlösung bei Widerständen",
+                    "Sichert Glaubwürdigkeit neuer strategischer Richtungen",
+                    "Vision als Antwort auf Volatilität"
+                ],
+                vorlesetext: "Ein Leitbild bietet gute Orientierung, weil es als Leitplanke das Handeln aller Mitarbeitenden in Transformationsprozessen auf gemeinsame Ziele ausrichtet und Aktivitäten koordiniert. In der komplexen VUCA-Welt liefert es einen Maßstab für Entscheidungen und hilft, Widerstände zu legitimieren und interne Konflikte zu lösen. Es definiert die einzigartigen Kompetenzen und Werte, die in die Zukunft getragen werden sollen, und sichert so die Glaubwürdigkeit neuer strategischer Richtungen. Kurz: Das Leitbild formuliert die Zukunftslogik der Organisation, sodass Transformation als zielgerichtete Entwicklung statt als Aktionismus wahrgenommen wird." },
+            { num: 27, category: "wie",
+                question: "Wie können Transformationsprozesse initiiert oder unterstützt werden?",
+                kernpunkte: ["Basis: Kotters 8-Stufen-Modell",
+                    "Initiierung: Dringlichkeit erzeugen, Führungskoalition aufbauen, Vision/Strategie entwickeln",
+                    "Unterstützung: Vision kommunizieren, Mitarbeitende befähigen, schnelle Erfolge, kulturelle Verankerung",
+                    "Führung muss Vorbild sein (auch persönliche Veränderung)",
+                    "Systemisch: Transformation kann nicht von außen erzwungen werden, nur Rahmenbedingungen gestalten"
+                ],
+                vorlesetext: "Transformationsprozesse folgen häufig Kotters 8-Stufen-Modell. Zur Initiierung erzeugt man zunächst ein Gefühl der Dringlichkeit, baut eine Führungskoalition auf und entwickelt mithilfe der Vision Map eine Vision und Strategie. Zur Unterstützung wird die Vision kommuniziert, Mitarbeitende werden befähigt, schnelle Erfolge sichtbar gemacht und die Veränderung schließlich in der Kultur verankert. Wichtig ist, dass die Führung selbst Vorbild ist und sich auch persönlich verändert. Systemtheoretisch gilt: Transformation kann nicht von außen erzwungen werden – Führung kann nur Rahmenbedingungen so gestalten, dass das System den Wandel selbstorganisiert vollzieht." },
+            { num: 28, category: "was",
+                question: "Was sind nachhaltige Ziele im Kontext von Strategie, Transformation und Verantwortung?",
+                kernpunkte: ["Drei gleichrangige Säulen: ökonomische, ökologische und soziale Ziele",
+                    "Ökonomisch: Markterfolg, Rentabilität, Zahlungsstrom, Unternehmenswert",
+                    "Ökologisch: CO2-Neutralität, Recycling, Materialauswahl, Ressourcenverbrauch",
+                    "Sozial: Mitarbeiterzufriedenheit, Diversity, faire Lieferketten, gesellschaftliche Verantwortung",
+                    "Relevant auf allen 3 Führungsebenen (normativ, strategisch, operativ)",
+                    "Operationalisierung über das SMART-Prinzip"
+                ],
+                vorlesetext: "Nachhaltige Ziele verfolgen gleichrangig ökonomische, ökologische und soziale Dimensionen und streben inter- und intragenerationelle Gerechtigkeit an. Ökonomische Ziele umfassen Markterfolg, Rentabilität und Unternehmenswert. Ökologische Ziele betreffen CO2-Neutralität, Recycling und Ressourcenschonung. Soziale Ziele reichen von Mitarbeiterzufriedenheit über Diversity bis zu fairen Lieferketten. Nachhaltige Ziele wirken auf allen drei Ebenen der Unternehmensführung: normativ als Teil von Purpose, Werten, Vision und Mission; strategisch als Wettbewerbsvorteil, etwa durch \"Green IT\"; operativ durch konkrete Maßnahmen und Kennzahlen. In Transformationsprozessen dienen sie, oft verankert im Leitbild, als Orientierungsrahmen. Damit sie wirksam werden, sollten sie SMART formuliert sein: spezifisch, messbar, anspruchsvoll, realistisch und terminiert." },
+            { num: 29, category: "warum",
+                question: "Warum müssen nachhaltige Ziele in das operative Tagesgeschäft übersetzt werden?",
+                kernpunkte: ["Ohne Übersetzung bleiben Nachhaltigkeitsziele bloße Absichtserklärungen",
+                    "SMART-Prinzip macht Ziele messbar und kontrollierbar",
+                    "Klare Zielverantwortung wird zugewiesen (wer ist zuständig?)",
+                    "Effiziente Nutzung von Erfolgspotenzialen im Tagesgeschäft",
+                    "Operative Ebene = das konkrete \"Was\" im Alltag"
+                ],
+                vorlesetext: "Nachhaltige Ziele müssen ins Tagesgeschäft übersetzt werden, damit aus abstrakten Ambitionen der normativen und strategischen Ebene konkret steuerbare Handlungen werden. Ohne diese Übersetzung blieben Nachhaltigkeitsversprechen bloße Absichtserklärungen ohne reale Wirkung. Erst durch das SMART-Prinzip – spezifisch, messbar, anspruchsvoll, realistisch, terminiert – werden Ziele im Alltag greifbar und ihr Fortschritt überprüfbar. Zusätzlich braucht es eine klare Zielverantwortung: Es muss feststehen, wer für die Erreichung eines Ziels zuständig ist, etwa eine Fachabteilung. So stellt die operative Übersetzung sicher, dass ökologische Ressourcen tatsächlich geschont und soziale Standards im Arbeitsalltag gelebt werden, statt nur strategische Option zu bleiben." },
+            { num: 30, category: "wie",
+                question: "Wie lassen sich nachhaltige Ziele stakeholderbezogen und SMART operationalisieren?",
+                kernpunkte: ["Schritt 1: Relevante Stakeholdergruppen identifizieren",
+                    "Schritt 2: Spezifische Erwartungen je Gruppe analysieren",
+                    "Schritt 3: Operative Ziele aus den Ansprüchen ableiten",
+                    "SMART: Spezifisch, Messbar, Anspruchsvoll & Realistisch, Terminiert",
+                    "Zusätzlich: Zielverantwortung (wer?) und Zielort (wo?) festlegen"
+                ],
+                vorlesetext: "Die Operationalisierung beginnt stakeholderbezogen: Zuerst werden die relevantesten Stakeholdergruppen identifiziert, etwa Kunden, Mitarbeitende oder die Gesellschaft. Für jede Gruppe werden die spezifischen Erwartungen analysiert, zum Beispiel Datensouveränität für Patienten oder Kosteneffizienz für Krankenkassen. Aus diesen Ansprüchen werden dann operative Ziele mit ökonomischer, ökologischer oder sozialer Ausrichtung abgeleitet. Damit die Ziele im Tagesgeschäft kontrollierbar sind, werden sie SMART formuliert: spezifisch, messbar, anspruchsvoll und realistisch sowie terminiert, zum Beispiel \"100 % aller KI-Modelle bis Ende Q4 2027 geprüft\". Ergänzend werden Zielverantwortung und Zielort festgelegt, damit die Nachhaltigkeitsstrategie keine bloße Absichtserklärung bleibt." }
         ];
 
-        // Vollständige Daten (hier gekürzt dargestellt – kopiere alle 30 in deine Datei)
-        // Ich empfehle, den vollständigen Array aus den vorherigen Nachrichten zu übernehmen.
+        const GLOSSAR = [
+            { term: "Analyse Unternehmensumwelt (PESTEL)",
+                definition: "Zur Analyse der Unternehmensumwelt wird diese in Segmente unterteilt und deren Einflussfaktoren bestimmt. In der angloamerikanischen Literatur werden in der PESTEL-Analyse (Political, Economical, Social, Technological, Environmental and Legal Analysis) eine politische, ökonomische, soziale, technologische, ökologische und rechtliche Umwelt unterschieden." },
+            { term: "Stakeholder",
+                definition: "Stakeholder sind Personen, Gruppen oder Organisationen, die mit einem Unternehmen in Beziehung stehen und Erwartungen gegenüber dem Unternehmen haben. Stakeholder zeigen, gegenüber wem Verantwortung entsteht. Verantwortung klärt, welche Ansprüche legitim sind und wie weit sie reichen." },
+            { term: "Unternehmerische Verantwortung",
+                definition: "Unternehmerische Verantwortung bedeutet, dass eine Organisation für ihre Entscheidungen, Handlungen und Folgen gegenüber betroffenen oder anspruchsberechtigten Stakeholdern Rechenschaft geben und ihre Entscheidungen begründen muss." },
+            { term: "Nachhaltige Unternehmensführung",
+                definition: "Nachhaltige Unternehmensführung verfolgt gleichermaßen ökonomische, ökologische und soziale Ziele und strebt dabei inter- und intragenerationelle Gerechtigkeit an." },
+            { term: "Normative Unternehmensführung",
+                definition: "Die normative Unternehmensführung bestimmt die Identität und Legitimität als Daseinsberechtigung eines Unternehmens. Sie legt den Sinn (Purpose), die Vision und Mission, die Werte und Kultur sowie die Corporate Governance fest. Sie sichert die Lebens- und Entwicklungsfähigkeit des Unternehmens." },
+            { term: "Strategische Unternehmensführung",
+                definition: "Die strategische Unternehmensführung ist auf die Entwicklung bestehender und die Erschließung neuer Erfolgspotenziale ausgerichtet und beschreibt die hierfür erforderlichen Ziele, Leistungspotenziale und Vorgehensweisen." },
+            { term: "Operative Unternehmensführung",
+                definition: "Die operative Unternehmensführung befasst sich mit der Planung, Steuerung und Kontrolle der laufenden Aktivitäten eines Unternehmens, um die bestehenden Erfolgspotenziale möglichst effizient zu nutzen." },
+            { term: "Purpose",
+                definition: "Der Purpose bestimmt die Daseinsberechtigung eines Unternehmens, die Sinn und Identität stiftet. Er beschreibt den Beitrag, den ein Unternehmen zur Umwelt und zum Gemeinwohl leisten möchte und dessen Existenz legitimiert." },
+            { term: "Werte",
+                definition: "Werte sind Vorstellungen, Ideen, Normen oder Verhaltensweisen, die in einer Gemeinschaft als wünschenswert anerkannt sind und deren Mitgliedern als Orientierung dienen." },
+            { term: "Unternehmenskultur",
+                definition: "Die Unternehmenskultur ist die Gesamtheit der in einem Unternehmen vorherrschenden Wertvorstellungen, Traditionen, Überlieferungen, Mythen und Denkhaltungen, welche das Verhalten der Mitarbeiter prägen." },
+            { term: "Vision",
+                definition: "Eine Unternehmensvision ist ein Zukunftsbild, das dem Unternehmen die Richtung weist und dessen interne Anspruchshaltung ausdrückt." },
+            { term: "Mission",
+                definition: "Die Unternehmensmission legt das Tätigkeitsfeld eines Unternehmens fest und beschreibt damit den Unternehmenszweck. Die Mission bestimmt, was ein Unternehmen erreichen will und welche Beiträge es für seine Stakeholder leistet." },
+            { term: "PESTLE-Analyse",
+                definition: "Zur Analyse der Unternehmensumwelt wird diese in Segmente unterteilt und deren Einflussfaktoren bestimmt. In der angloamerikanischen Literatur werden in der PESTLE-Analyse (Political, Economical, Social, Technological, Legal and Environmental Analysis) eine politische, ökonomische, soziale, technologische, ökologische und rechtliche Umwelt unterschieden." },
+            { term: "Branche",
+                definition: "Eine Branche ist eine Gruppe von Unternehmen, deren Produkte oder Dienstleistungen sich gegenseitig weitgehend ersetzen können. Die Branchenstrukturanalyse (Five Forces Model) nach Porter (1979 veröffentlicht) unterscheidet fünf Wettbewerbskräfte zur Bestimmung der Attraktivität einer Branche. Diese beeinflussen die Preise, Kosten und Investitionen der Unternehmen und dadurch die Rentabilität der Branche." },
+            { term: "Gesamtmarkt",
+                definition: "Ein Gesamtmarkt besteht aus den Nachfragern und Anbietern eines bestimmten Produkts sowie den zur Abwicklung des Leistungsaustauschs erforderlichen Beziehungen. Der relevante Markt ist der Teil des Gesamtmarkts, auf dem es für ein Unternehmen attraktiv ist, seine Produkte und Dienstleistungen anzubieten." },
+            { term: "Wettbewerbsvorteil",
+                definition: "Ein Unternehmen hat einen Wettbewerbsvorteil, wenn es gegenüber der Konkurrenz entweder Alleinstellungsmerkmale anbietet, für welche die Kunden bereit sind einen Premiumpreis zu bezahlen, Kostenvorteile oder Marktmacht nutzen kann." },
+            { term: "Erfolgspotenziale",
+                definition: "Erfolgspotenziale sind produkt- und marktspezifische, technologische oder qualifikatorische Voraussetzungen für zukünftigen Erfolg, die aus den Wettbewerbsvorteilen des Unternehmens aufgrund dessen Positionierung im Wettbewerb und Ressourcengestaltung resultieren." },
+            { term: "Wettbewerbsstrategie",
+                definition: "Eine Wettbewerbsstrategie legt fest, auf welche Art und Weise ein Geschäftsfeld einen Wettbewerbsvorteil erzielen soll." },
+            { term: "Erfolgsfaktoren",
+                definition: "Erfolgsfaktoren sind unternehmensinterne Maßgrößen, die den Unternehmenserfolg entscheidend beeinflussen. Ein Modell zur Analyse von Erfolgsfaktoren liefert das 7-S-Modell von Peters und Waterman (1982 veröffentlicht) mit den 7 Elementen Structure, Strategy, System, Shared Values, Skills, Style, und Staff." },
+            { term: "SWOT-Analyse",
+                definition: "Die SWOT (Strenghts, Weaknesses, Opportunities, Threats)-Analyse (in den 1960er Jahren von der Harvard Business School veröffentlicht) beurteilt Chancen und Gefahren aus dem Unternehmensumfeld sowie Stärken und Schwächen des Unternehmens. Sie zeigt die strategische Position, in der sich das Unternehmen befindet und verdeutlichen strategischen Handlungsbedarf." },
+            { term: "TOWS-Matrix",
+                definition: "Mithilfe der TOWS-Matrix können Schlussfolgerungen in Form von Normstrategien abgeleitet werden. Dazu wird die Faustregel „Stärken betonen, Schwächen vermeiden“ mit den wichtigsten Chancen und Gefahren eines Unternehmens kombiniert." },
+            { term: "Strategieformulierung",
+                definition: "Die Strategieformulierung umfasst die Bewertung und Auswahl der strategischen Alternativen. Eine Möglichkeit zur Strategieformulierung ist die Erarbeitung eines Business Plans." },
+            { term: "SMARTe Ziele",
+                definition: "Spezifischer Zielinhalt; Messbares Zielausmaß; Anspruchsvolles Zielausmaß und herausfordernder Zieltermin; Realistisches Zielausmaß sowie Terminlich festgelegte Zieleinreichung." }
+        ];
 
-        let mastered = new Set();
+        // ──────────────────────────── STUDYGUIDE STATE ────────────────────────────
+        let mastered = new Set(JSON.parse(localStorage.getItem('akten_mastered') || '[]'));
+        let currentFilter = 'all';
+        const CAT_LABEL = { was: 'Was', warum: 'Warum', wie: 'Wie' };
 
-        function renderQuestions(filteredQuestions) {
-            const container = document.getElementById('questions-container');
-            container.innerHTML = '';
-            
-            filteredQuestions.forEach((q, index) => {
-                const isMastered = mastered.has(q.nr);
-                const div = document.createElement('div');
-                div.className = `question-card bg-zinc-900 border ${isMastered ? 'mastered border-emerald-500' : 'border-zinc-800'} rounded-3xl overflow-hidden`;
-                div.innerHTML = `
-                    <div onclick="toggleAccordion(this)" class="p-6 cursor-pointer flex items-start gap-4">
-                        <div class="w-10 h-10 flex-shrink-0 bg-zinc-800 rounded-2xl flex items-center justify-center font-bold text-lg">${q.nr}</div>
-                        <div class="flex-1">
-                            <div class="flex items-center gap-3">
-                                <span class="uppercase text-xs tracking-widest font-mono ${q.type === 'was' ? 'text-sky-400' : q.type === 'warum' ? 'text-amber-400' : 'text-violet-400'}">
-                                    ${q.type.toUpperCase()}
-                                </span>
-                                <h3 class="font-semibold text-lg">${q.q}</h3>
-                            </div>
-                        </div>
-                        <i class="fas fa-chevron-down transition-transform mt-1"></i>
-                    </div>
-                    
-                    <div class="accordion-content px-6 pb-6">
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <!-- Kernpunkte -->
-                            <div>
-                                <div class="uppercase text-emerald-400 text-xs tracking-widest mb-3 font-medium">KERNPUNKTE (schnell überfliegen)</div>
-                                <div class="prose prose-invert text-zinc-300 text-[15px] leading-relaxed" style="font-size: 15px;">
-                                    ${q.kern}
-                                </div>
-                            </div>
-                            <!-- Vorlesetext -->
-                            <div>
-                                <div class="uppercase text-amber-400 text-xs tracking-widest mb-3 font-medium">VORLESETEXT (30-Sekunden-Antwort)</div>
-                                <div class="bg-zinc-950 border border-zinc-700 rounded-2xl p-5 text-zinc-100 leading-relaxed text-[15.2px]">
-                                    ${q.text}
-                                </div>
-                                <button onclick="speak(this)" 
-                                        class="mt-4 text-sm flex items-center gap-2 text-zinc-400 hover:text-white">
-                                    <i class="fas fa-volume-up"></i> Vorlesen
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="flex justify-end mt-6">
-                            <button onclick="markAsMastered('${q.nr}', this)" 
-                                    class="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-2xl text-sm font-medium">
-                                <i class="fas fa-check"></i>
-                                <span>${isMastered ? 'Bereits gemeistert' : 'Ich kann das!'}</span>
-                            </button>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-            
-            updateProgress();
-        }
-
-        function toggleAccordion(el) {
-            const card = el.parentElement;
-            card.classList.toggle('accordion-open');
-        }
-
-        function toggleAll(open) {
-            document.querySelectorAll('.question-card').forEach(card => {
-                if (open) card.classList.add('accordion-open');
-                else card.classList.remove('accordion-open');
-            });
-        }
-
-        function markAsMastered(nr, btn) {
-            if (mastered.has(nr)) {
-                mastered.delete(nr);
-                btn.innerHTML = `<i class="fas fa-check"></i><span>Ich kann das!</span>`;
-            } else {
-                mastered.add(nr);
-                btn.innerHTML = `<i class="fas fa-check"></i><span>Bereits gemeistert ✓</span>`;
-            }
-            updateProgress();
-            renderQuestions(getCurrentFiltered());
+        function saveMastered() {
+            localStorage.setItem('akten_mastered', JSON.stringify([...mastered]));
         }
 
         function updateProgress() {
             const count = mastered.size;
             document.getElementById('mastered-count').textContent = count;
-            document.getElementById('progress-bar').style.width = (count / 30 * 100) + '%';
+            document.getElementById('progress-bar').style.width = (count / QUESTIONS.length * 100) + '%';
+            // Update nav buttons count
+            document.querySelector('[data-filter="all"]').textContent = `ALLE (${QUESTIONS.length})`;
         }
 
-        function filterCategory(cat) {
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active', 'bg-zinc-800'));
-            event.currentTarget.classList.add('active', 'bg-zinc-800');
-            
-            let filtered = questions;
-            if (cat !== 'all') {
-                filtered = questions.filter(q => q.type === cat);
+        function getFilteredQuestions() {
+            if (currentFilter === 'all') return QUESTIONS;
+            return QUESTIONS.filter(q => q.category === currentFilter);
+        }
+
+        function buildQuestionCard(q) {
+            const isMastered = mastered.has(q.num);
+            const card = document.createElement('div');
+            card.className = `question-card bg-zinc-900 border ${isMastered ? 'mastered border-emerald-500' : 'border-zinc-800'} rounded-3xl overflow-hidden`;
+            card.dataset.num = q.num;
+            card.dataset.cat = q.category;
+
+            const kernHTML = q.kernpunkte.map(k => `<span class="block">— ${k}</span>`).join('');
+
+            card.innerHTML = `
+            <div class="p-6 cursor-pointer flex items-start gap-4 accordion-head">
+              <div class="w-10 h-10 flex-shrink-0 bg-zinc-800 rounded-2xl flex items-center justify-center font-bold text-lg">${String(q.num).padStart(2, '0')}</div>
+              <div class="flex-1">
+                <div class="flex items-center gap-3">
+                  <span class="uppercase text-xs tracking-widest font-mono ${q.category === 'was' ? 'text-sky-400' : q.category === 'warum' ? 'text-amber-400' : 'text-violet-400'}">${CAT_LABEL[q.category]}</span>
+                  <h3 class="font-semibold text-lg">${q.question}</h3>
+                </div>
+              </div>
+              <i class="fas fa-chevron-down transition-transform mt-1"></i>
+            </div>
+            <div class="accordion-content px-6 pb-6">
+              <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                  <div class="uppercase text-emerald-400 text-xs tracking-widest mb-3 font-medium">KERNPUNKTE</div>
+                  <div class="text-zinc-300 text-[15px] leading-relaxed space-y-1">${kernHTML}</div>
+                </div>
+                <div>
+                  <div class="uppercase text-amber-400 text-xs tracking-widest mb-3 font-medium">VORLESETEXT</div>
+                  <div class="bg-zinc-950 border border-zinc-700 rounded-2xl p-5 text-zinc-100 leading-relaxed text-[15px] vorlesetext-content">${q.vorlesetext}</div>
+                  <button onclick="speak(this)" class="mt-4 text-sm flex items-center gap-2 text-zinc-400 hover:text-white speak-btn">
+                    <i class="fas fa-volume-up"></i> Vorlesen
+                  </button>
+                </div>
+              </div>
+              <div class="flex justify-end mt-6">
+                <button onclick="markAsMastered(${q.num}, this)" class="flex items-center gap-2 px-6 py-3 ${isMastered ? 'bg-emerald-700' : 'bg-emerald-600 hover:bg-emerald-500'} rounded-2xl text-sm font-medium master-btn">
+                  <i class="fas fa-check"></i>
+                  <span>${isMastered ? 'Bereits gemeistert' : 'Ich kann das!'}</span>
+                </button>
+              </div>
+            </div>
+          `;
+            return card;
+        }
+
+        function renderQuestions() {
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+            const filtered = getFilteredQuestions();
+            filtered.forEach(q => container.appendChild(buildQuestionCard(q)));
+            updateProgress();
+        }
+
+        window.toggleAccordion = function(el) {
+            const card = el.closest('.question-card');
+            card.classList.toggle('accordion-open');
+        };
+
+        window.toggleAll = function(open) {
+            document.querySelectorAll('.question-card').forEach(card => {
+                if (open) card.classList.add('accordion-open');
+                else card.classList.remove('accordion-open');
+            });
+        };
+
+        window.markAsMastered = function(num, btn) {
+            if (mastered.has(num)) {
+                mastered.delete(num);
+            } else {
+                mastered.add(num);
             }
-            renderQuestions(filtered);
-        }
+            saveMastered();
+            updateProgress();
+            // Re-render to update card classes and button text
+            const card = btn.closest('.question-card');
+            const isNowMastered = mastered.has(num);
+            card.classList.toggle('mastered', isNowMastered);
+            card.classList.toggle('border-emerald-500', isNowMastered);
+            card.classList.toggle('border-zinc-800', !isNowMastered);
+            btn.querySelector('span').textContent = isNowMastered ? 'Bereits gemeistert' : 'Ich kann das!';
+            btn.classList.toggle('bg-emerald-700', isNowMastered);
+            btn.classList.toggle('bg-emerald-600', !isNowMastered);
+            btn.classList.toggle('hover:bg-emerald-500', !isNowMastered);
+        };
 
-        function getCurrentFiltered() {
-            // Vereinfacht – in voller Version Filter-Status speichern
-            return questions;
-        }
+        window.filterCategory = function(cat) {
+            currentFilter = cat;
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-zinc-800');
+                if (btn.dataset.filter === cat) btn.classList.add('active', 'bg-zinc-800');
+            });
+            renderQuestions();
+        };
 
-        function speak(btn) {
-            const text = btn.parentElement.querySelector('div.bg-zinc-950').textContent.trim();
+        window.speak = function(btn) {
+            const text = btn.parentElement.querySelector('.vorlesetext-content').textContent.trim();
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'de-DE';
             speechSynthesis.speak(utterance);
-        }
+        };
 
-        function startKreuzfeuer() {
-            alert("🔥 KREUZFEUER MODUS gestartet!\n\nIch zeige dir jetzt zufällig Fragen. Antworte laut und klappe dann auf, um zu prüfen.\n\nViel Erfolg!");
-            // Hier könnte ein echter Quiz-Modus implementiert werden
-            renderQuestions(questions.sort(() => Math.random() - 0.5));
-        }
-
-        function resetAll() {
-            if (confirm("Fortschritt wirklich zurücksetzen?")) {
+        window.resetAll = function() {
+            if (confirm('Fortschritt wirklich zurücksetzen?')) {
                 mastered.clear();
+                saveMastered();
                 updateProgress();
-                renderQuestions(questions);
+                renderQuestions();
             }
+        };
+
+        // Event delegation for accordion clicks
+        document.getElementById('questions-container').addEventListener('click', function(e) {
+            const head = e.target.closest('.accordion-head');
+            if (head && e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+                window.toggleAccordion(head);
+            }
+        });
+
+        // ──────────────────────────── KREUZFEUER ────────────────────────────
+        const byCat = { was: [], warum: [], wie: [] };
+        QUESTIONS.forEach(q => byCat[q.category].push(q));
+
+        let lastPick = { was: null, warum: null, wie: null };
+        let roundCount = 0;
+
+        function pickRandom(cat) {
+            const pool = byCat[cat];
+            if (pool.length === 0) return null;
+            if (pool.length === 1) return pool[0];
+            let choice;
+            let attempts = 0;
+            do {
+                choice = pool[Math.floor(Math.random() * pool.length)];
+                attempts++;
+                if (attempts > 20) break;
+            } while (choice === lastPick[cat] && pool.length > 1);
+            lastPick[cat] = choice;
+            return choice;
         }
 
-        // Timer (30 Minuten)
+        function triggerBondFlash() {
+            const flash = document.getElementById('bond-flash');
+            flash.classList.remove('fire');
+            void flash.offsetWidth;
+            flash.classList.add('fire');
+            setTimeout(() => flash.classList.remove('fire'), 600);
+        }
+
+        function buildKreuzCard(q, order) {
+            const card = document.createElement('div');
+            card.className = 'kreuz-card bg-zinc-900 border border-zinc-700 rounded-2xl p-5';
+            card.innerHTML = `
+            <div class="flex items-center gap-3 mb-3">
+              <span class="uppercase text-xs tracking-widest font-mono px-2 py-1 rounded ${q.category === 'was' ? 'bg-sky-900 text-sky-300' : q.category === 'warum' ? 'bg-amber-900 text-amber-300' : 'bg-violet-900 text-violet-300'}">${CAT_LABEL[q.category]}</span>
+              <span class="text-xs text-zinc-500">Frage ${order} von 3 · Nr. ${String(q.num).padStart(2, '0')}</span>
+            </div>
+            <div class="flex items-start justify-between gap-4">
+              <h3 class="text-lg font-semibold flex-1">${q.question}</h3>
+              <button class="help-btn w-8 h-8 rounded-full border border-zinc-600 flex items-center justify-center text-sm font-bold hover:bg-zinc-700" aria-label="Kernpunkte anzeigen">?</button>
+            </div>
+            <div class="kreuz-hint max-h-0 overflow-hidden transition-all duration-300">
+              <div class="mt-4 p-4 bg-zinc-950 border-l-2 border-amber-500 rounded-r-lg">
+                <div class="text-zinc-300 text-sm space-y-1">${q.kernpunkte.map(k => `<span class="block">— ${k}</span>`).join('')}</div>
+              </div>
+            </div>
+          `;
+            // Help button toggle
+            const helpBtn = card.querySelector('.help-btn');
+            const hint = card.querySelector('.kreuz-hint');
+            helpBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (helpBtn.classList.contains('active')) {
+                    helpBtn.classList.remove('active');
+                    hint.style.maxHeight = null;
+                } else {
+                    helpBtn.classList.add('active');
+                    hint.style.maxHeight = hint.scrollHeight + 'px';
+                }
+            });
+            return card;
+        }
+
+        window.startKreuzfeuer = function() {
+            const section = document.getElementById('kreuzfeuer-section');
+            section.classList.remove('hidden');
+            section.scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('kreuz-generate').click();
+        };
+
+        document.getElementById('kreuz-generate').addEventListener('click', function() {
+            const crosshair = document.getElementById('crosshair');
+            const btn = document.getElementById('kreuz-generate');
+            crosshair.classList.add('spinning', 'firing');
+            btn.disabled = true;
+            triggerBondFlash();
+
+            setTimeout(() => {
+                crosshair.classList.remove('spinning', 'firing');
+                btn.disabled = false;
+                btn.textContent = 'Nächste Runde';
+                roundCount++;
+                document.getElementById('kreuz-round-num').textContent = roundCount;
+                document.getElementById('kreuz-round-label').classList.add('opacity-100');
+                document.getElementById('kreuz-round-label').classList.remove('opacity-0');
+
+                const picks = [pickRandom('was'), pickRandom('warum'), pickRandom('wie')];
+                const container = document.getElementById('kreuz-cards');
+                container.innerHTML = '';
+                picks.forEach((q, i) => {
+                    const card = buildKreuzCard(q, i + 1);
+                    container.appendChild(card);
+                    setTimeout(() => card.classList.add('show'), 80 * i);
+                });
+            }, 600);
+        });
+
+        // ──────────────────────────── GLOSSARY ────────────────────────────
+        const glossaryOverlay = document.getElementById('glossary-overlay');
+        const glossaryList = document.getElementById('glossary-list');
+        const glossarySearch = document.getElementById('glossary-search');
+
+        const sortedGlossar = GLOSSAR.slice().sort((a, b) => a.term.localeCompare(b.term, 'de'));
+
+        function renderGlossar(filterText = '') {
+            glossaryList.innerHTML = '';
+            const q = filterText.trim().toLowerCase();
+            const results = sortedGlossar.filter(item =>
+                !q || item.term.toLowerCase().includes(q) || item.definition.toLowerCase().includes(q)
+            );
+            if (results.length === 0) {
+                glossaryList.innerHTML =
+                    '<div class="text-zinc-500 text-sm text-center py-8">Kein Begriff gefunden.</div>';
+                return;
+            }
+            results.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'border-b border-zinc-700 py-3';
+                div.innerHTML = `
+              <p class="font-mono font-bold text-sm text-sky-400 mb-1">${item.term}</p>
+              <p class="text-zinc-300 text-sm leading-relaxed">${item.definition}</p>
+            `;
+                glossaryList.appendChild(div);
+            });
+        }
+
+        document.getElementById('glossary-open').addEventListener('click', () => {
+            glossaryOverlay.classList.add('show');
+            renderGlossar('');
+            glossarySearch.value = '';
+            setTimeout(() => glossarySearch.focus(), 200);
+        });
+
+        document.getElementById('glossary-close').addEventListener('click', () => {
+            glossaryOverlay.classList.remove('show');
+        });
+
+        glossaryOverlay.addEventListener('click', function(e) {
+            if (e.target === glossaryOverlay) glossaryOverlay.classList.remove('show');
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') glossaryOverlay.classList.remove('show');
+        });
+
+        glossarySearch.addEventListener('input', function() {
+            renderGlossar(glossarySearch.value);
+        });
+
+        renderGlossar('');
+
+        // ──────────────────────────── TIMER ────────────────────────────
         let timeLeft = 30 * 60;
+        const timerEl = document.getElementById('timer');
+
         function startTimer() {
-            const timerEl = document.getElementById('timer');
             setInterval(() => {
                 timeLeft--;
+                if (timeLeft < 0) timeLeft = 0;
                 const min = Math.floor(timeLeft / 60);
                 const sec = timeLeft % 60;
                 timerEl.textContent = `${min}:${sec < 10 ? '0' : ''}${sec}`;
+                if (timeLeft <= 0) timerEl.classList.add('text-red-400');
             }, 1000);
         }
 
-        // Init
-        window.onload = () => {
-            // Hier alle 30 Fragen vollständig einfügen
-            // Für diese Demo nur die Struktur
-            renderQuestions(questions);
-            startTimer();
-        };
-    </script>
+        // ──────────────────────────── INIT ────────────────────────────
+        renderQuestions();
+        startTimer();
+        updateProgress();
+    })();
+</script>
 </body>
 </html>
